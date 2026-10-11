@@ -89,7 +89,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     {
       label: '仓库总数',
       value: stats.totalRepos,
-      sub: '当前账号可访问',
+      sub: `${stats.forkRepos} 个 Fork / ${Math.max(0, stats.totalRepos - stats.forkRepos)} 个自建项目`,
       icon: FolderGit2,
       color: 'text-slate-800 dark:text-slate-200',
       bg: 'bg-slate-100 dark:bg-slate-800',

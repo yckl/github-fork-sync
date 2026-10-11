@@ -12,6 +12,7 @@ export async function runScheduledCheckCycle(): Promise<void> {
   const repos = await listRepositories({ monitoredOnly: true });
 
   for (const repo of repos) {
+    if (!repo.isFork && !repo.syncConfig?.upstreamRepo) continue;
     if (!repo.syncConfig?.autoCheckEnabled) continue;
 
     // Check if interval has elapsed
@@ -72,6 +73,14 @@ export async function triggerCheckRepo(repoId: number, priority = 10): Promise<s
   const repo = await getRepositoryById(repoId);
   const repoName = repo ? repo.fullName : `Repo-${repoId}`;
 
+  // If repo is self-created without upstream, complete gracefully without throwing error
+  if (repo && !repo.isFork && (!repo.syncConfig || !repo.syncConfig.upstreamRepo)) {
+    return taskQueue.enqueue('check_single', repoId, repoName, priority, async (_jobId, updateStep) => {
+      await updateStep('自建项目（非 Fork），无需同步上游代码');
+      await compareRepositoryBranches(repoId);
+    });
+  }
+
   return taskQueue.enqueue('check_single', repoId, repoName, priority, async (jobId, updateStep) => {
     await updateStep('获取最新 Commit SHA 与比较提交历史...');
     const result = await compareRepositoryBranches(repoId);
@@ -87,9 +96,11 @@ export async function triggerCheckRepo(repoId: number, priority = 10): Promise<s
 export async function triggerCheckAll(priority = 10): Promise<string[]> {
   logger.info('Scheduler', 'Triggering check for all monitored repositories...');
   const repos = await listRepositories({ monitoredOnly: true });
+  // Filter only forks or repos with custom upstream configured
+  const targetRepos = repos.filter((r) => r.isFork || Boolean(r.syncConfig?.upstreamRepo));
   const jobIds: string[] = [];
 
-  for (const repo of repos) {
+  for (const repo of targetRepos) {
     const jobId = await triggerCheckRepo(repo.id, priority);
     jobIds.push(jobId);
   }

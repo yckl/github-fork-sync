@@ -9,6 +9,7 @@ import {
   Zap,
   Activity,
   Layers,
+  Trash2,
 } from 'lucide-react';
 import type { JobRecord } from '@gitforksync/shared';
 import { api } from '../api/client.js';
@@ -55,6 +56,17 @@ export const TasksPage: React.FC = () => {
     }
   };
 
+  const handleClearJobs = async () => {
+    if (!window.confirm('确定要清空所有历史任务记录吗？')) return;
+    try {
+      await api.clearJobs();
+      setMessage('已清空历史任务记录');
+      fetchJobs();
+    } catch (err: any) {
+      setMessage(`清空失败: ${err.message}`);
+    }
+  };
+
   const runningJobs = jobs.filter((j) => j.status === 'running');
   const pendingJobs = jobs.filter((j) => j.status === 'pending');
   const finishedJobs = jobs.filter((j) => j.status === 'completed' || j.status === 'failed');
@@ -80,6 +92,13 @@ export const TasksPage: React.FC = () => {
             title="手动刷新"
           >
             <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={handleClearJobs}
+            className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-500 hover:text-rose-600 dark:text-slate-400 transition"
+            title="清空历史任务"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={handleCheckAll}
@@ -205,52 +224,63 @@ export const TasksPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                jobs.map((job) => (
-                  <tr key={job.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition">
-                    <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
-                      {job.type.startsWith('sync') ? 'Git 仓库同步' : '版本提交检测'}
-                    </td>
-                    <td className="py-3 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-400">
-                      {job.repoFullName || (job.repoId ? `Repo #${job.repoId}` : '全局扫描')}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          job.status === 'completed'
-                            ? 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300'
-                            : job.status === 'running'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 animate-pulse'
-                            : job.status === 'pending'
-                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                            : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
-                        }`}
-                      >
-                        {job.status === 'completed' && <CheckCircle2 className="w-3 h-3 mr-0.5" />}
-                        {job.status === 'failed' && <XCircle className="w-3 h-3 mr-0.5" />}
-                        {job.status === 'running' && <RefreshCw className="w-3 h-3 mr-0.5 animate-spin" />}
-                        {job.status === 'pending' && <Clock className="w-3 h-3 mr-0.5" />}
-                        <span>
-                          {job.status === 'completed' && '已完成'}
-                          {job.status === 'running' && '执行中'}
-                          {job.status === 'pending' && '等待中'}
-                          {job.status === 'failed' && '失败'}
-                        </span>
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-slate-500 dark:text-slate-400 text-[11px] truncate max-w-xs">
-                      {job.error ? (
-                        <span className="text-rose-600 dark:text-rose-400 font-medium">{job.error}</span>
-                      ) : (
-                        job.currentStep || '正常就绪'
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono tabular-nums text-[11px] text-slate-400">
-                      {job.finishedAt
-                        ? new Date(job.finishedAt).toLocaleTimeString()
-                        : new Date(job.createdAt).toLocaleTimeString()}
-                    </td>
-                  </tr>
-                ))
+                jobs.map((job) => {
+                  const isSelfOwned = job.error?.includes('尚未配置同步信息') || job.currentStep?.includes('自建');
+                  return (
+                    <tr key={job.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition">
+                      <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
+                        {job.type.startsWith('sync') ? 'Git 仓库同步' : '版本提交检测'}
+                      </td>
+                      <td className="py-3 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-400">
+                        {job.repoFullName || (job.repoId ? `Repo #${job.repoId}` : '全局扫描')}
+                      </td>
+                      <td className="py-3 px-4">
+                        {isSelfOwned ? (
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                            自建项目（已跳过）
+                          </span>
+                        ) : (
+                          <span
+                            className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              job.status === 'completed'
+                                ? 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300'
+                                : job.status === 'running'
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 animate-pulse'
+                                : job.status === 'pending'
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                            }`}
+                          >
+                            {job.status === 'completed' && <CheckCircle2 className="w-3 h-3 mr-0.5" />}
+                            {job.status === 'failed' && <XCircle className="w-3 h-3 mr-0.5" />}
+                            {job.status === 'running' && <RefreshCw className="w-3 h-3 mr-0.5 animate-spin" />}
+                            {job.status === 'pending' && <Clock className="w-3 h-3 mr-0.5" />}
+                            <span>
+                              {job.status === 'completed' && '已完成'}
+                              {job.status === 'running' && '执行中'}
+                              {job.status === 'pending' && '等待中'}
+                              {job.status === 'failed' && '失败'}
+                            </span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-slate-500 dark:text-slate-400 text-[11px] truncate max-w-xs">
+                        {isSelfOwned ? (
+                          <span className="text-slate-400 text-[11px]">原生自建项目，无需同步上游</span>
+                        ) : job.error ? (
+                          <span className="text-rose-600 dark:text-rose-400 font-medium">{job.error}</span>
+                        ) : (
+                          job.currentStep || '正常就绪'
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-[11px] text-slate-400">
+                        {job.finishedAt
+                          ? new Date(job.finishedAt).toLocaleTimeString()
+                          : new Date(job.createdAt).toLocaleTimeString()}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

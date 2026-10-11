@@ -139,6 +139,9 @@ export const api = {
   checkAllJobs: async (): Promise<{ count: number; message: string }> => {
     return fetchJson<{ count: number; message: string }>('/jobs/check-all', { method: 'POST' });
   },
+  clearJobs: async (): Promise<{ message: string }> => {
+    return fetchJson<{ message: string }>('/jobs/clear', { method: 'POST' });
+  },
   syncSelectedJobs: async (repoIds: number[]): Promise<{ count: number; message: string }> => {
     return fetchJson<{ count: number; message: string }>('/jobs/sync-selected', {
       method: 'POST',

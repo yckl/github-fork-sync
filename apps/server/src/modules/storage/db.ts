@@ -271,7 +271,18 @@ export async function listRepositories(filter?: {
     }
 
     let latestComparison: LatestComparison | null = null;
-    if (row.checked_at || row.comp_status) {
+    if (!row.is_fork && !row.upstream_repo) {
+      latestComparison = {
+        status: 'self_owned',
+        upstreamSha: null,
+        targetSha: null,
+        aheadBy: 0,
+        behindBy: 0,
+        commonAncestorSha: null,
+        checkedAt: row.checked_at ? (row.checked_at as string) : null,
+        errorMessage: null,
+      };
+    } else if (row.checked_at || row.comp_status) {
       let commitPreview: any = undefined;
       if (row.commit_preview_json) {
         try {
@@ -633,6 +644,11 @@ export async function recoverInterruptedJobs(): Promise<void> {
   const db = getDb();
   // Mark running jobs as failed with recovery notice
   await db.execute(`UPDATE jobs SET status = 'failed', error = '系统重启，任务意外中断' WHERE status = 'running';`);
+}
+
+export async function clearJobs(): Promise<void> {
+  const db = getDb();
+  await db.execute('DELETE FROM jobs;');
 }
 
 // ==================== Settings DAO ====================

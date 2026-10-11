@@ -94,8 +94,35 @@ export async function compareRepositoryBranches(repoId: number): Promise<Compare
   if (!repo) {
     throw new Error(`仓库不存在 (ID: ${repoId})`);
   }
-  if (!repo.syncConfig) {
-    throw new Error(`仓库 ${repo.fullName} 尚未配置同步信息`);
+
+  // Handle self-created / non-fork repositories without upstream
+  if (!repo.isFork && (!repo.syncConfig || !repo.syncConfig.upstreamRepo)) {
+    const summary = '自建项目（非 Fork），无需同步上游代码';
+    logger.info('Compare', `${repo.fullName} 为自建项目，跳过上游代码比较`);
+    const now = new Date().toISOString();
+    await updateLatestComparison(repoId, {
+      status: 'self_owned',
+      upstreamSha: null,
+      targetSha: null,
+      aheadBy: 0,
+      behindBy: 0,
+      commonAncestorSha: null,
+      checkedAt: now,
+      errorMessage: null,
+    });
+    return {
+      status: 'self_owned',
+      upstreamSha: null,
+      targetSha: null,
+      aheadBy: 0,
+      behindBy: 0,
+      commonAncestorSha: null,
+      summary,
+    };
+  }
+
+  if (!repo.syncConfig || !repo.syncConfig.upstreamRepo) {
+    throw new Error(`仓库 ${repo.fullName} 尚未配置上游同步信息`);
   }
 
   const { upstreamRepo, upstreamBranch, targetBranch, syncMode } = repo.syncConfig;

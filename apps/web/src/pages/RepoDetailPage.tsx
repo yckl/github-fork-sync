@@ -12,6 +12,7 @@ import {
   Save,
   ShieldAlert,
   Trash2,
+  FolderGit2,
 } from 'lucide-react';
 import type { RepositoryItem, SyncConfig, CheckRunRecord, SyncRunRecord, SyncMode } from '@gitforksync/shared';
 import { api } from '../api/client.js';
@@ -203,8 +204,21 @@ export const RepoDetailPage: React.FC<RepoDetailPageProps> = ({ repoId, onClose,
             </div>
           )}
 
+          {/* Self-owned repo notice */}
+          {repo && !repo.isFork && !upstreamRepo && (
+            <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800 text-xs text-indigo-900 dark:text-indigo-200 space-y-1">
+              <div className="font-bold flex items-center space-x-1.5">
+                <FolderGit2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span>此项目为您的原生自建仓库（非 Fork）</span>
+              </div>
+              <p className="text-[11px] text-indigo-700/90 dark:text-indigo-300/90">
+                该项目为原创或自建项目，默认无需从上游同步。如果您需要将某个外部开源仓库作为上游进行单向跟踪合并，可在下方手动填写上游仓库地址并保存。
+              </p>
+            </div>
+          )}
+
           {/* Quick status bar */}
-          {comp && (
+          {comp && !(!repo.isFork && !upstreamRepo) && (
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold">
                 <span className="text-slate-600 dark:text-slate-300">当前分支状态</span>
@@ -469,8 +483,9 @@ export const RepoDetailPage: React.FC<RepoDetailPageProps> = ({ repoId, onClose,
           <div className="flex items-center space-x-2">
             <button
               onClick={handleCheckNow}
-              disabled={checking}
-              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 disabled:opacity-50"
+              disabled={checking || (!repo?.isFork && !upstreamRepo)}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed"
+              title={!repo?.isFork && !upstreamRepo ? '自建项目未配置上游，无需检测' : '立即检测'}
             >
               {checking ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
               <span>立即检测</span>
@@ -487,8 +502,9 @@ export const RepoDetailPage: React.FC<RepoDetailPageProps> = ({ repoId, onClose,
 
           <button
             onClick={handleSyncNow}
-            disabled={syncing}
-            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-md shadow-emerald-500/20 disabled:opacity-50"
+            disabled={syncing || (!repo?.isFork && !upstreamRepo)}
+            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-md shadow-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+            title={!repo?.isFork && !upstreamRepo ? '自建项目未配置上游，无需同步' : '立即发起同步'}
           >
             {syncing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
             <span>立即发起同步</span>

@@ -6,6 +6,8 @@ export type ComparisonStatus =
   | 'ahead'            // 我方有独立提交，上游无新提交
   | 'diverged'         // 双方都有独立提交 (分支分叉)
   | 'incompatible'     // 没有共同祖先
+  | 'self_owned'       // 自建项目 (无需同步)
+  | 'skipped'          // 已跳过检测
   | 'unknown'          // 状态未知 / 强制推送
   | 'error';           // API 失败
 

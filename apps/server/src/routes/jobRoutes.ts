@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { listJobs } from '../modules/storage/db.js';
+import { listJobs, clearJobs } from '../modules/storage/db.js';
 import { triggerCheckAll, triggerSyncSelected } from '../modules/scheduler/schedulerService.js';
 import { taskQueue } from '../modules/scheduler/queue.js';
 import { z } from 'zod';
@@ -9,6 +9,11 @@ export async function jobRoutes(server: FastifyInstance) {
     const jobs = await listJobs(50);
     const queueStatus = taskQueue.getQueueStatus();
     return { success: true, jobs, queueStatus };
+  });
+
+  server.post('/api/jobs/clear', async () => {
+    await clearJobs();
+    return { success: true, message: '任务记录已清空' };
   });
 
   server.post('/api/jobs/check-all', async () => {

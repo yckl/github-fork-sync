@@ -15,6 +15,7 @@ import {
   ArrowUpRight,
   ChevronDown,
   Trash2,
+  FolderGit2,
 } from 'lucide-react';
 import type { RepositoryItem, SyncMode } from '@gitforksync/shared';
 import { api } from '../api/client.js';
@@ -29,6 +30,7 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [repoTypeFilter, setRepoTypeFilter] = useState<'all' | 'forks' | 'self'>('all');
   const [monitoredOnly, setMonitoredOnly] = useState(false);
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -55,11 +57,20 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
     fetchRepos();
   }, [search, statusFilter, monitoredOnly]);
 
+  const forkCount = repos.filter((r) => r.isFork).length;
+  const selfCount = repos.filter((r) => !r.isFork).length;
+
+  const displayedRepos = repos.filter((r) => {
+    if (repoTypeFilter === 'forks' && !r.isFork) return false;
+    if (repoTypeFilter === 'self' && r.isFork) return false;
+    return true;
+  });
+
   const toggleSelectAll = () => {
-    if (selectedIds.size === repos.length) {
+    if (selectedIds.size === displayedRepos.length && displayedRepos.length > 0) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(repos.map((r) => r.id)));
+      setSelectedIds(new Set(displayedRepos.map((r) => r.id)));
     }
   };
 
@@ -98,9 +109,20 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
 
   const handleBatchSync = async () => {
     if (selectedIds.size === 0) return;
+    const eligibleIds = Array.from(selectedIds).filter((id) => {
+      const r = repos.find((repo) => repo.id === id);
+      return r && (r.isFork || Boolean(r.syncConfig?.upstreamRepo));
+    });
+
+    if (eligibleIds.length === 0) {
+      setActionMessage('所选仓库均为自建原生项目，无上游代码需同步');
+      return;
+    }
+
     try {
-      const res = await api.syncSelectedJobs(Array.from(selectedIds));
-      setActionMessage(res.message);
+      const res = await api.syncSelectedJobs(eligibleIds);
+      const skippedCount = selectedIds.size - eligibleIds.length;
+      setActionMessage(`${res.message}${skippedCount > 0 ? `（已自动跳过 ${skippedCount} 个无需同步的自建项目）` : ''}`);
       onRefreshStats();
     } catch (err: any) {
       setActionMessage(`触发批量同步失败: ${err.message}`);
@@ -201,8 +223,41 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
             />
           </div>
 
-          {/* Quick toggle pills */}
-          <div className="flex items-center space-x-2">
+          {/* Quick toggle pills & Type tabs */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center space-x-1 p-0.5 bg-slate-100 dark:bg-slate-800 rounded-xl">
+              <button
+                onClick={() => setRepoTypeFilter('all')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
+                  repoTypeFilter === 'all'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm font-semibold'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                }`}
+              >
+                全部 ({repos.length})
+              </button>
+              <button
+                onClick={() => setRepoTypeFilter('forks')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
+                  repoTypeFilter === 'forks'
+                    ? 'bg-emerald-600 text-white shadow-sm font-semibold'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                }`}
+              >
+                Fork 仓库 ({forkCount})
+              </button>
+              <button
+                onClick={() => setRepoTypeFilter('self')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
+                  repoTypeFilter === 'self'
+                    ? 'bg-indigo-600 text-white shadow-sm font-semibold'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                }`}
+              >
+                自建项目 ({selfCount})
+              </button>
+            </div>
+
             <button
               onClick={() => setMonitoredOnly(!monitoredOnly)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
@@ -325,17 +380,21 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
-              {repos.length === 0 ? (
+              {displayedRepos.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-400 text-xs">
-                    未找到匹配的仓库。点击上方“扫描新仓库”从 GitHub 获取。
+                    {repoTypeFilter === 'forks'
+                      ? '未找到 Fork 仓库。'
+                      : repoTypeFilter === 'self'
+                      ? '未找到自建项目。'
+                      : '未找到匹配的仓库。点击上方“扫描新仓库”从 GitHub 获取。'}
                   </td>
                 </tr>
               ) : (
-                repos.map((repo) => {
+                displayedRepos.map((repo) => {
                   const comp = repo.latestComparison;
                   const isSelected = selectedIds.has(repo.id);
-                  const isFork = repo.isFork;
+                  const isSelfOwned = !repo.isFork && !repo.syncConfig?.upstreamRepo;
 
                   return (
                     <tr
@@ -381,20 +440,40 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
                           )}
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center space-x-1 truncate max-w-xs">
-                          <GitFork className="w-3 h-3 flex-shrink-0 text-slate-400" />
-                          <span className="truncate">{repo.parentFullName || repo.syncConfig?.upstreamRepo || '自建项目'}</span>
+                          {isSelfOwned ? (
+                            <span className="inline-flex items-center space-x-1 text-indigo-600 dark:text-indigo-400 font-medium">
+                              <FolderGit2 className="w-3 h-3" />
+                              <span>原生自建项目 (无上游)</span>
+                            </span>
+                          ) : (
+                            <>
+                              <GitFork className="w-3 h-3 flex-shrink-0 text-slate-400" />
+                              <span className="truncate">{repo.parentFullName || repo.syncConfig?.upstreamRepo}</span>
+                            </>
+                          )}
                         </div>
                       </td>
 
                       {/* Branches */}
                       <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-300">
-                        <div>目标: {repo.syncConfig?.targetBranch || 'upstream-sync'}</div>
-                        <div className="text-slate-400 text-[10px]">上游: {repo.syncConfig?.upstreamBranch || 'main'}</div>
+                        {isSelfOwned ? (
+                          <>
+                            <div>分支: {repo.defaultBranch}</div>
+                            <div className="text-slate-400 text-[10px]">独立项目无需同步</div>
+                          </>
+                        ) : (
+                          <>
+                            <div>目标: {repo.syncConfig?.targetBranch || 'upstream-sync'}</div>
+                            <div className="text-slate-400 text-[10px]">上游: {repo.syncConfig?.upstreamBranch || 'main'}</div>
+                          </>
+                        )}
                       </td>
 
                       {/* Ahead / Behind numbers */}
                       <td className="py-3.5 px-4 font-mono tabular-nums text-xs">
-                        {comp ? (
+                        {isSelfOwned ? (
+                          <span className="text-slate-400 text-[11px]">— 自建项目 —</span>
+                        ) : comp ? (
                           <div className="flex items-center space-x-2">
                             {comp.aheadBy > 0 ? (
                               <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-bold text-[11px]">
@@ -416,7 +495,11 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
 
                       {/* Sync status badge */}
                       <td className="py-3.5 px-4">
-                        {comp ? (
+                        {isSelfOwned ? (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                            自建项目 (无需同步)
+                          </span>
+                        ) : comp ? (
                           <span
                             className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
                               comp.status === 'up_to_date'
@@ -427,6 +510,8 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
                                 ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                                 : comp.status === 'ahead'
                                 ? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200'
+                                : comp.status === 'self_owned'
+                                ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
                                 : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
                             }`}
                           >
@@ -435,6 +520,7 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
                             {comp.status === 'diverged' && '分支分叉'}
                             {comp.status === 'ahead' && '我方领先'}
                             {comp.status === 'incompatible' && '不兼容'}
+                            {comp.status === 'self_owned' && '自建项目'}
                             {comp.status === 'error' && '检测失败'}
                           </span>
                         ) : (
@@ -444,63 +530,91 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
 
                       {/* Auto-check switch */}
                       <td className="py-3.5 px-4 text-center">
-                        <button
-                          onClick={() => handleToggleAutoCheck(repo)}
-                          className={`w-9 h-5 rounded-full p-0.5 transition ${
-                            repo.syncConfig?.autoCheckEnabled
-                              ? 'bg-emerald-500'
-                              : 'bg-slate-200 dark:bg-slate-700'
-                          }`}
-                        >
-                          <div
-                            className={`w-4 h-4 rounded-full bg-white transition transform ${
-                              repo.syncConfig?.autoCheckEnabled ? 'translate-x-4' : 'translate-x-0'
+                        {isSelfOwned ? (
+                          <span className="text-slate-300 dark:text-slate-700 text-xs">—</span>
+                        ) : (
+                          <button
+                            onClick={() => handleToggleAutoCheck(repo)}
+                            className={`w-9 h-5 rounded-full p-0.5 transition ${
+                              repo.syncConfig?.autoCheckEnabled
+                                ? 'bg-emerald-500'
+                                : 'bg-slate-200 dark:bg-slate-700'
                             }`}
-                          />
-                        </button>
+                          >
+                            <div
+                              className={`w-4 h-4 rounded-full bg-white transition transform ${
+                                repo.syncConfig?.autoCheckEnabled ? 'translate-x-4' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        )}
                       </td>
 
                       {/* Auto-sync switch */}
                       <td className="py-3.5 px-4 text-center">
-                        <button
-                          onClick={() => handleToggleAutoSync(repo)}
-                          className={`w-9 h-5 rounded-full p-0.5 transition ${
-                            repo.syncConfig?.autoSyncEnabled
-                              ? 'bg-emerald-500'
-                              : 'bg-slate-200 dark:bg-slate-700'
-                          }`}
-                        >
-                          <div
-                            className={`w-4 h-4 rounded-full bg-white transition transform ${
-                              repo.syncConfig?.autoSyncEnabled ? 'translate-x-4' : 'translate-x-0'
+                        {isSelfOwned ? (
+                          <span className="text-slate-300 dark:text-slate-700 text-xs">—</span>
+                        ) : (
+                          <button
+                            onClick={() => handleToggleAutoSync(repo)}
+                            className={`w-9 h-5 rounded-full p-0.5 transition ${
+                              repo.syncConfig?.autoSyncEnabled
+                                ? 'bg-emerald-500'
+                                : 'bg-slate-200 dark:bg-slate-700'
                             }`}
-                          />
-                        </button>
+                          >
+                            <div
+                              className={`w-4 h-4 rounded-full bg-white transition transform ${
+                                repo.syncConfig?.autoSyncEnabled ? 'translate-x-4' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        )}
                       </td>
 
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end space-x-1.5">
-                          <button
-                            onClick={() => handleSingleCheck(repo.id)}
-                            className="p-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                            title="立即检测"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                          </button>
+                          {isSelfOwned ? (
+                            <button
+                              disabled
+                              className="p-1.5 text-slate-300 dark:text-slate-700 cursor-not-allowed"
+                              title="自建项目无需检测"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleSingleCheck(repo.id)}
+                              className="p-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                              title="立即检测"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                            </button>
+                          )}
 
-                          <button
-                            onClick={() => handleSingleSync(repo.id)}
-                            disabled={comp?.status !== 'behind_safe'}
-                            className={`p-1.5 rounded-lg transition ${
-                              comp?.status === 'behind_safe'
-                                ? 'text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 font-bold'
-                                : 'text-slate-300 dark:text-slate-700 cursor-not-allowed'
-                            }`}
-                            title="立即同步"
-                          >
-                            <Zap className="w-3.5 h-3.5" />
-                          </button>
+                          {isSelfOwned ? (
+                            <button
+                              disabled
+                              className="p-1.5 text-slate-300 dark:text-slate-700 cursor-not-allowed"
+                              title="自建项目无需同步"
+                            >
+                              <Zap className="w-3.5 h-3.5" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleSingleSync(repo.id)}
+                              disabled={comp?.status !== 'behind_safe'}
+                              className={`p-1.5 rounded-lg transition ${
+                                comp?.status === 'behind_safe'
+                                  ? 'text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 font-bold'
+                                  : 'text-slate-300 dark:text-slate-700 cursor-not-allowed'
+                              }`}
+                              title="立即同步"
+                            >
+                              <Zap className="w-3.5 h-3.5" />
+                            </button>
+                          )}
 
                           <button
                             onClick={() => setSelectedRepoId(repo.id)}
