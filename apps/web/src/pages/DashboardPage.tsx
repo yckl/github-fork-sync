@@ -261,12 +261,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               stats.recentChecks.slice(0, 6).map((c) => (
                 <div
                   key={c.id}
-                  className="p-3 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs"
+                  onClick={() => onNavigateToRepo(c.repoId)}
+                  className="p-3 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs hover:border-emerald-400/50 dark:hover:border-emerald-600/50 cursor-pointer transition group"
+                  title="点击查看仓库详情"
                 >
                   <div className="min-w-0 pr-3">
                     <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
-                        仓库 #{c.repoId}
+                      <span className="font-semibold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition truncate">
+                        {c.repoFullName || c.repoName || `仓库 #${c.repoId}`}
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
@@ -323,12 +325,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               stats.recentSyncs.slice(0, 6).map((s) => (
                 <div
                   key={s.id}
-                  className="p-3 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs"
+                  onClick={() => onNavigateToRepo(s.repoId)}
+                  className="p-3 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs hover:border-emerald-400/50 dark:hover:border-emerald-600/50 cursor-pointer transition group"
+                  title="点击查看仓库详情"
                 >
                   <div className="min-w-0 pr-3">
                     <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
-                        仓库 #{s.repoId} ({s.targetBranch})
+                      <span className="font-semibold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition truncate">
+                        {s.repoFullName || s.repoName || `仓库 #${s.repoId}`}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        ({s.targetBranch})
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${

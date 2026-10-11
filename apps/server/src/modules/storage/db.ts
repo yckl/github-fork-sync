@@ -467,19 +467,25 @@ export async function createCheckRun(record: CheckRunRecord): Promise<void> {
 
 export async function getCheckRuns(repoId?: number, limit = 20): Promise<CheckRunRecord[]> {
   const db = getDb();
-  let sql = 'SELECT * FROM check_runs';
+  let sql = `
+    SELECT cr.*, r.name as repo_name, r.full_name as repo_full_name
+    FROM check_runs cr
+    LEFT JOIN repositories r ON cr.repo_id = r.id
+  `;
   const args: any[] = [];
   if (repoId) {
-    sql += ' WHERE repo_id = ?';
+    sql += ' WHERE cr.repo_id = ?';
     args.push(repoId);
   }
-  sql += ' ORDER BY started_at DESC LIMIT ?;';
+  sql += ' ORDER BY cr.started_at DESC LIMIT ?;';
   args.push(limit);
 
   const res = await db.execute({ sql, args });
   return res.rows.map((row) => ({
     id: row.id as string,
     repoId: row.repo_id as number,
+    repoName: (row.repo_name as string) || null,
+    repoFullName: (row.repo_full_name as string) || null,
     startedAt: row.started_at as string,
     finishedAt: row.finished_at as string,
     upstreamSha: (row.upstream_sha as string) || null,
@@ -527,19 +533,25 @@ export async function createSyncRun(record: SyncRunRecord): Promise<void> {
 
 export async function getSyncRuns(repoId?: number, limit = 20): Promise<SyncRunRecord[]> {
   const db = getDb();
-  let sql = 'SELECT * FROM sync_runs';
+  let sql = `
+    SELECT sr.*, r.name as repo_name, r.full_name as repo_full_name
+    FROM sync_runs sr
+    LEFT JOIN repositories r ON sr.repo_id = r.id
+  `;
   const args: any[] = [];
   if (repoId) {
-    sql += ' WHERE repo_id = ?';
+    sql += ' WHERE sr.repo_id = ?';
     args.push(repoId);
   }
-  sql += ' ORDER BY started_at DESC LIMIT ?;';
+  sql += ' ORDER BY sr.started_at DESC LIMIT ?;';
   args.push(limit);
 
   const res = await db.execute({ sql, args });
   return res.rows.map((row) => ({
     id: row.id as string,
     repoId: row.repo_id as number,
+    repoName: (row.repo_name as string) || null,
+    repoFullName: (row.repo_full_name as string) || null,
     syncMode: row.sync_mode as any,
     targetBranch: row.target_branch as string,
     startedAt: row.started_at as string,

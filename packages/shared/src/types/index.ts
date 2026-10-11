@@ -80,6 +80,8 @@ export interface RepositoryItem {
 export interface CheckRunRecord {
   id: string;
   repoId: number;
+  repoName?: string | null;
+  repoFullName?: string | null;
   startedAt: string;
   finishedAt: string;
   upstreamSha: string | null;
@@ -94,6 +96,8 @@ export interface CheckRunRecord {
 export interface SyncRunRecord {
   id: string;
   repoId: number;
+  repoName?: string | null;
+  repoFullName?: string | null;
   syncMode: SyncMode;
   targetBranch: string;
   startedAt: string;
