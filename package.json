@@ -1,0 +1,19 @@
+{
+  "name": "git-fork-sync-root",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=@gitforksync/shared && npm run build --workspace=@gitforksync/web && npm run build --workspace=@gitforksync/server",
+    "start": "npm run start --workspace=@gitforksync/server",
+    "dev:server": "npm run dev --workspace=@gitforksync/server",
+    "dev:web": "npm run dev --workspace=@gitforksync/web",
+    "test": "npm run test --workspace=@gitforksync/server"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}
