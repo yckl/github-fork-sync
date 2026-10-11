@@ -39,6 +39,10 @@ export async function createServer() {
     }
   });
 
+  server.addContentTypeParser(['application/x-www-form-urlencoded', 'text/plain'], { parseAs: 'string' }, (req, body, defaultDone) => {
+    defaultDone(null, {});
+  });
+
   server.setErrorHandler((error, request, reply) => {
     logger.error('Server', `API 错误: ${error.message}`, { details: error.stack });
     const statusCode = error.statusCode || 500;
