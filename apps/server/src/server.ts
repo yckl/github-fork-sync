@@ -26,6 +26,28 @@ export async function createServer() {
     bodyLimit: 10 * 1024 * 1024,
   });
 
+  // Allow empty JSON bodies on POST/PATCH requests
+  server.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, defaultDone) => {
+    if (!body || (typeof body === 'string' && body.trim() === '')) {
+      defaultDone(null, {});
+      return;
+    }
+    try {
+      defaultDone(null, JSON.parse(body as string));
+    } catch (err: any) {
+      defaultDone(err, undefined);
+    }
+  });
+
+  server.setErrorHandler((error, request, reply) => {
+    logger.error('Server', `API 错误: ${error.message}`, { details: error.stack });
+    const statusCode = error.statusCode || 500;
+    reply.status(statusCode).send({
+      success: false,
+      error: error.message || '服务器内部错误',
+    });
+  });
+
   // CORS for local development
   await server.register(cors, {
     origin: true,

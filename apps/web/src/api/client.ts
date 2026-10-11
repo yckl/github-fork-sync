@@ -13,17 +13,28 @@ import type {
 const API_BASE = '/api';
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {};
+  let body = options?.body;
+
+  if (body) {
+    headers['Content-Type'] = 'application/json';
+  } else if (options?.method === 'POST' || options?.method === 'PATCH') {
+    headers['Content-Type'] = 'application/json';
+    body = '{}';
+  }
+
   const res = await fetch(`${API_BASE}${url}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers || {}),
-    },
     ...options,
+    body,
+    headers: {
+      ...headers,
+      ...(options?.headers as any || {}),
+    },
   });
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.success === false) {
-    throw new Error(data.error || `请求失败 (${res.status})`);
+    throw new Error(data.error || data.message || `请求失败 (${res.status})`);
   }
   return data;
 }
