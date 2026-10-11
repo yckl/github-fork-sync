@@ -14,6 +14,7 @@ import {
   GitFork,
   ArrowUpRight,
   ChevronDown,
+  Trash2,
 } from 'lucide-react';
 import type { RepositoryItem, SyncMode } from '@gitforksync/shared';
 import { api } from '../api/client.js';
@@ -103,6 +104,39 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
       onRefreshStats();
     } catch (err: any) {
       setActionMessage(`触发批量同步失败: ${err.message}`);
+    }
+  };
+
+  const handleDeleteRepo = async (repo: RepositoryItem) => {
+    if (!window.confirm(`确定要从系统移除仓库「${repo.name}」吗？\n\n提示：仅从本地管理列表移除记录，不会在 GitHub 上删除任何远程代码。`)) {
+      return;
+    }
+    try {
+      await api.deleteRepository(repo.id);
+      setActionMessage(`已移除仓库: ${repo.name}`);
+      const nextSelected = new Set(selectedIds);
+      nextSelected.delete(repo.id);
+      setSelectedIds(nextSelected);
+      fetchRepos();
+      onRefreshStats();
+    } catch (err: any) {
+      setActionMessage(`移除失败: ${err.message}`);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`确定要从系统批量移除选中的 ${selectedIds.size} 个仓库吗？\n\n提示：仅从本地管理列表移除记录，不会在 GitHub 上删除任何远程代码。`)) {
+      return;
+    }
+    try {
+      const res = await api.batchDeleteRepositories(Array.from(selectedIds));
+      setActionMessage(res.message);
+      setSelectedIds(new Set());
+      fetchRepos();
+      onRefreshStats();
+    } catch (err: any) {
+      setActionMessage(`批量移除失败: ${err.message}`);
     }
   };
 
@@ -254,6 +288,13 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
               className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-sm"
             >
               批量发起同步
+            </button>
+            <button
+              onClick={handleBatchDelete}
+              className="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/40 font-medium inline-flex items-center space-x-1"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              <span>批量移除 ({selectedIds.size})</span>
             </button>
           </div>
         </div>
@@ -467,6 +508,14 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
                             title="设置详情"
                           >
                             <Settings className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteRepo(repo)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 transition"
+                            title="从系统中移除"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>

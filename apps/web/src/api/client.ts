@@ -116,6 +116,15 @@ export const api = {
       body: JSON.stringify({ repoIds, syncMode }),
     });
   },
+  deleteRepository: async (id: number): Promise<{ message: string }> => {
+    return fetchJson<{ message: string }>(`/repositories/${id}`, { method: 'DELETE' });
+  },
+  batchDeleteRepositories: async (repoIds: number[]): Promise<{ count: number; message: string }> => {
+    return fetchJson<{ count: number; message: string }>('/repositories/batch-delete', {
+      method: 'POST',
+      body: JSON.stringify({ repoIds }),
+    });
+  },
 
   // Jobs
   getJobs: async (): Promise<{

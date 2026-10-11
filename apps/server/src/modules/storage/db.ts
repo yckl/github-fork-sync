@@ -17,12 +17,13 @@ import type {
 
 let dbClient: Client | null = null;
 
-export async function initDb(): Promise<Client> {
+export async function initDb(customDbPath?: string): Promise<Client> {
   if (dbClient) {
     return dbClient;
   }
 
-  const url = `file:${config.dbPath.replace(/\\/g, '/')}`;
+  const resolvedPath = customDbPath || process.env.GITFORKSYNC_DB_PATH || config.dbPath;
+  const url = `file:${resolvedPath.replace(/\\/g, '/')}`;
   logger.info('Storage', `Initializing SQLite database at: ${url}`);
   dbClient = createClient({ url });
 
@@ -55,6 +56,13 @@ export function getDb(): Client {
     throw new Error('Database has not been initialized yet');
   }
   return dbClient;
+}
+
+export async function closeDb(): Promise<void> {
+  if (dbClient) {
+    dbClient.close();
+    dbClient = null;
+  }
 }
 
 // ==================== Accounts DAO ====================
@@ -308,6 +316,28 @@ export async function listRepositories(filter?: {
 export async function getRepositoryById(id: number): Promise<RepositoryItem | null> {
   const repos = await listRepositories();
   return repos.find((r) => r.id === id) || null;
+}
+
+export async function deleteRepository(id: number): Promise<void> {
+  const db = getDb();
+  await db.execute({ sql: 'DELETE FROM sync_configs WHERE repo_id = ?;', args: [id] });
+  await db.execute({ sql: 'DELETE FROM latest_comparisons WHERE repo_id = ?;', args: [id] });
+  await db.execute({ sql: 'DELETE FROM check_runs WHERE repo_id = ?;', args: [id] });
+  await db.execute({ sql: 'DELETE FROM sync_runs WHERE repo_id = ?;', args: [id] });
+  await db.execute({ sql: 'DELETE FROM jobs WHERE repo_id = ?;', args: [id] });
+  await db.execute({ sql: 'DELETE FROM repositories WHERE id = ?;', args: [id] });
+}
+
+export async function deleteRepositories(ids: number[]): Promise<void> {
+  if (ids.length === 0) return;
+  const db = getDb();
+  const placeholders = ids.map(() => '?').join(',');
+  await db.execute({ sql: `DELETE FROM sync_configs WHERE repo_id IN (${placeholders});`, args: ids });
+  await db.execute({ sql: `DELETE FROM latest_comparisons WHERE repo_id IN (${placeholders});`, args: ids });
+  await db.execute({ sql: `DELETE FROM check_runs WHERE repo_id IN (${placeholders});`, args: ids });
+  await db.execute({ sql: `DELETE FROM sync_runs WHERE repo_id IN (${placeholders});`, args: ids });
+  await db.execute({ sql: `DELETE FROM jobs WHERE repo_id IN (${placeholders});`, args: ids });
+  await db.execute({ sql: `DELETE FROM repositories WHERE id IN (${placeholders});`, args: ids });
 }
 
 export async function updateSyncConfig(

@@ -2,6 +2,8 @@ import type { FastifyInstance } from 'fastify';
 import {
   listRepositories,
   getRepositoryById,
+  deleteRepository,
+  deleteRepositories,
   updateSyncConfig,
   getCheckRuns,
   getSyncRuns,
@@ -141,5 +143,28 @@ export async function repoRoutes(server: FastifyInstance) {
     }
 
     return { success: true, count: parseRes.data.repoIds.length };
+  });
+
+  // Delete a single repository from tracking
+  server.delete('/api/repositories/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const repoId = parseInt(id, 10);
+    if (isNaN(repoId)) {
+      return reply.status(400).send({ success: false, error: '仓库 ID 无效' });
+    }
+
+    await deleteRepository(repoId);
+    return { success: true, message: '仓库已从系统中移除' };
+  });
+
+  // Batch delete repositories from tracking
+  server.post('/api/repositories/batch-delete', async (request, reply) => {
+    const { repoIds } = (request.body as { repoIds?: number[] }) || {};
+    if (!Array.isArray(repoIds) || repoIds.length === 0) {
+      return reply.status(400).send({ success: false, error: '请提供要删除的仓库 ID 列表' });
+    }
+
+    await deleteRepositories(repoIds);
+    return { success: true, count: repoIds.length, message: `已从系统中移除 ${repoIds.length} 个仓库` };
   });
 }

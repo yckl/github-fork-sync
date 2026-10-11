@@ -11,6 +11,7 @@ import {
   Clock,
   Save,
   ShieldAlert,
+  Trash2,
 } from 'lucide-react';
 import type { RepositoryItem, SyncConfig, CheckRunRecord, SyncRunRecord, SyncMode } from '@gitforksync/shared';
 import { api } from '../api/client.js';
@@ -115,6 +116,24 @@ export const RepoDetailPage: React.FC<RepoDetailPageProps> = ({ repoId, onClose,
       setMessage(`同步失败: ${err.message}`);
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleDeleteRepo = async () => {
+    if (!repo) return;
+    if (
+      !window.confirm(
+        `确定要从系统移除仓库「${repo.name}」吗？\n\n提示：仅从本地管理列表移除记录，不会在 GitHub 上删除任何远程代码。`
+      )
+    ) {
+      return;
+    }
+    try {
+      await api.deleteRepository(repo.id);
+      onUpdated();
+      onClose();
+    } catch (err: any) {
+      setMessage(`移除失败: ${err.message}`);
     }
   };
 
@@ -447,14 +466,24 @@ export const RepoDetailPage: React.FC<RepoDetailPageProps> = ({ repoId, onClose,
 
         {/* Footer actions */}
         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex items-center justify-between">
-          <button
-            onClick={handleCheckNow}
-            disabled={checking}
-            className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 disabled:opacity-50"
-          >
-            {checking ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-            <span>立即检测</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleCheckNow}
+              disabled={checking}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 disabled:opacity-50"
+            >
+              {checking ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              <span>立即检测</span>
+            </button>
+            <button
+              onClick={handleDeleteRepo}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-medium transition"
+              title="从本地管理列表移除"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>从系统移除</span>
+            </button>
+          </div>
 
           <button
             onClick={handleSyncNow}
