@@ -37,7 +37,7 @@
 
 ### 1. 🛡️ 银行级安全保障机制
 - **本地主密钥加密**：GitHub Token 采用 **AES-256-GCM** 加密持久化存储于 `%LOCALAPPDATA%\GitForkSync\master.key`，数据库内绝无明文凭据。
-- **UI 全程脱敏**：前端界面与错误弹窗仅展示掩码（如 `gith...xIAi`），接口绝不向浏览器回传明文 Token。
+- **UI 全程脱敏**：前端界面与错误弹窗仅展示掩码（如 `github_pat_...xxxx`），接口绝不向浏览器回传明文 Token。
 - **AskPass 管道认证**：底层 Git CLI 操作通过私有 AskPass 管道流式输入认证凭据，进程命令行参数与 Remote URL 中无任何泄露风险。
 - **零破坏性推送承诺**：严禁 `git push --force`，严禁在分叉状态下强行覆盖个人修改。
 
