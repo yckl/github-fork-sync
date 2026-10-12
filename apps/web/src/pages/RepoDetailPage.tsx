@@ -143,10 +143,15 @@ export const RepoDetailPage: React.FC<RepoDetailPageProps> = ({ repoId, onClose,
   const preview = comp?.commitPreview;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/50 backdrop-blur-sm flex justify-end">
-      <div className="w-full max-w-2xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-200">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/60 backdrop-blur-sm flex flex-col justify-end sm:justify-center sm:items-end">
+      <div className="w-full sm:max-w-2xl bg-white dark:bg-slate-900 h-[92vh] sm:h-full shadow-2xl flex flex-col rounded-t-3xl sm:rounded-none border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom sm:slide-in-from-right duration-200">
+        {/* Mobile Drag Indicator Handle */}
+        <div className="pt-2.5 pb-1 sm:hidden flex justify-center">
+          <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
+        </div>
+
         {/* Header */}
-        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div className="min-w-0 pr-4">
             <h2 className="text-base font-bold text-slate-900 dark:text-white truncate flex items-center space-x-2">
               <span>{repo?.fullName || '仓库详情'}</span>
@@ -174,7 +179,7 @@ export const RepoDetailPage: React.FC<RepoDetailPageProps> = ({ repoId, onClose,
         </div>
 
         {/* Tab Controls */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 px-5 pt-2">
+        <div className="flex border-b border-slate-200 dark:border-slate-800 px-4 sm:px-5 pt-2 overflow-x-auto no-scrollbar">
           {[
             { id: 'config', label: '同步配置' },
             { id: 'preview', label: '提交差异预览' },
@@ -183,7 +188,7 @@ export const RepoDetailPage: React.FC<RepoDetailPageProps> = ({ repoId, onClose,
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id as any)}
-              className={`px-4 py-2 text-xs font-semibold border-b-2 transition ${
+              className={`px-4 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition ${
                 activeTab === t.id
                   ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
                   : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
@@ -475,12 +480,12 @@ export const RepoDetailPage: React.FC<RepoDetailPageProps> = ({ repoId, onClose,
         </div>
 
         {/* Footer actions */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+        <div className="p-3.5 sm:p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex flex-wrap items-center justify-between gap-2.5 pb-6 sm:pb-4">
+          <div className="flex items-center space-x-2 flex-1 sm:flex-initial">
             <button
               onClick={handleCheckNow}
               disabled={checking || (!repo?.isFork && !upstreamRepo)}
-              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed flex-1 sm:flex-initial"
               title={!repo?.isFork && !upstreamRepo ? '自建项目未配置上游，无需检测' : '立即检测'}
             >
               {checking ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
@@ -488,7 +493,7 @@ export const RepoDetailPage: React.FC<RepoDetailPageProps> = ({ repoId, onClose,
             </button>
             <button
               onClick={handleDeleteRepo}
-              className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-medium transition"
+              className="inline-flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-medium transition flex-1 sm:flex-initial"
               title="从本地管理列表移除"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -499,7 +504,7 @@ export const RepoDetailPage: React.FC<RepoDetailPageProps> = ({ repoId, onClose,
           <button
             onClick={handleSyncNow}
             disabled={syncing || (!repo?.isFork && !upstreamRepo)}
-            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-md shadow-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto inline-flex items-center justify-center space-x-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-md shadow-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
             title={!repo?.isFork && !upstreamRepo ? '自建项目未配置上游，无需同步' : '立即发起同步'}
           >
             {syncing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}

@@ -158,32 +158,32 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Banner & Quick Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white flex items-center space-x-2">
             <span>控制台概览</span>
             {stats.runningJobsCount > 0 && (
-              <span className="flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 animate-pulse">
+              <span className="flex items-center space-x-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 animate-pulse">
                 <RefreshCw className="w-3 h-3 animate-spin" />
                 <span>任务执行中</span>
               </span>
             )}
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center space-x-3">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="flex items-center space-x-1">
               <Clock className="w-3.5 h-3.5" />
-              <span>下次自动检查: {stats.nextCheckTime ? new Date(stats.nextCheckTime).toLocaleTimeString() : '排队中'}</span>
+              <span>下次检查: {stats.nextCheckTime ? new Date(stats.nextCheckTime).toLocaleTimeString() : '排队中'}</span>
             </span>
-            <span>•</span>
-            <span>API 配额: {stats.apiRateLimit.remaining} / {stats.apiRateLimit.limit}</span>
+            <span className="hidden sm:inline">•</span>
+            <span className="font-mono">API 额度: {stats.apiRateLimit.remaining} / {stats.apiRateLimit.limit}</span>
           </p>
         </div>
 
-        <div className="flex items-center space-x-2.5">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={handleDiscover}
             disabled={discovering}
-            className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-medium transition disabled:opacity-50"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-3.5 py-2.5 sm:py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-medium transition disabled:opacity-50"
           >
             {discovering ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
             <span>扫描新仓库</span>
@@ -192,10 +192,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <button
             onClick={handleCheckAll}
             disabled={triggeringCheckAll}
-            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-md shadow-emerald-500/20 transition disabled:opacity-50"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-4 py-2.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-500/20 transition disabled:opacity-50"
           >
             {triggeringCheckAll ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-            <span>立即检查所有仓库</span>
+            <span>立即检查全部</span>
           </button>
         </div>
       </div>
@@ -269,9 +269,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   className="p-3 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs hover:border-emerald-400/50 dark:hover:border-emerald-600/50 cursor-pointer transition group"
                   title="点击查看仓库详情"
                 >
-                  <div className="min-w-0 pr-3">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition truncate">
+                  <div className="min-w-0 pr-2 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-semibold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition truncate max-w-[200px] sm:max-w-none">
                         {c.repoFullName || c.repoName || `仓库 #${c.repoId}`}
                       </span>
                       <span
@@ -333,9 +333,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   className="p-3 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs hover:border-emerald-400/50 dark:hover:border-emerald-600/50 cursor-pointer transition group"
                   title="点击查看仓库详情"
                 >
-                  <div className="min-w-0 pr-3">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition truncate">
+                  <div className="min-w-0 pr-2 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-semibold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition truncate max-w-[200px] sm:max-w-none">
                         {s.repoFullName || s.repoName || `仓库 #${s.repoId}`}
                       </span>
                       <span className="text-[10px] text-slate-400 font-mono">

@@ -67,8 +67,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Center: Tactile Pill Navigation Tabs */}
-        <nav className="flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-full border border-slate-200/60 dark:border-slate-700/60 shadow-inner">
+        {/* Center: Tactile Pill Navigation Tabs (Desktop) */}
+        <nav className="hidden md:flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-full border border-slate-200/60 dark:border-slate-700/60 shadow-inner">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = currentTab === item.id;
@@ -95,15 +95,15 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* Right: Telemetry pill badges & user avatar */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 sm:space-x-3">
           {/* Rate limit telemetry */}
           {rateLimit && (
             <div
-              className="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono tabular-nums bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+              className="flex items-center space-x-1 sm:space-x-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-[11px] font-mono tabular-nums bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
               title={`API 剩余额度: ${rateLimit.remaining} / ${rateLimit.limit}`}
             >
               <div
-                className={`w-2 h-2 rounded-full ${
+                className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
                   rateLimit.remaining > 500
                     ? 'bg-emerald-500'
                     : rateLimit.remaining > 50

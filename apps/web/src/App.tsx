@@ -8,6 +8,7 @@ import { RepositoriesPage } from './pages/RepositoriesPage.js';
 import { TasksPage } from './pages/TasksPage.js';
 import { LogsPage } from './pages/LogsPage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
+import { MobileTabBar } from './components/layout/MobileTabBar.js';
 import { RefreshCw } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -106,7 +107,7 @@ export const App: React.FC = () => {
         onDisconnect={handleDisconnect}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 md:pb-8">
         {currentTab === 'dashboard' && (
           <DashboardPage
             stats={stats}
@@ -132,6 +133,13 @@ export const App: React.FC = () => {
           />
         )}
       </main>
+
+      {/* Floating mobile bottom dock tab bar */}
+      <MobileTabBar
+        currentTab={currentTab}
+        onTabChange={setCurrentTab}
+        stats={stats}
+      />
     </div>
   );
 };

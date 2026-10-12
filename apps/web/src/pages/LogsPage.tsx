@@ -72,8 +72,8 @@ export const LogsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center space-x-2.5">
-          <label className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400 cursor-pointer pr-2">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
+          <label className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400 cursor-pointer pr-1">
             <input
               type="checkbox"
               checked={autoRefresh}
@@ -88,7 +88,7 @@ export const LogsPage: React.FC = () => {
             className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 transition"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copied ? '已复制到剪贴板' : '一键复制脱敏日志'}</span>
+            <span>{copied ? '已复制' : '复制脱敏日志'}</span>
           </button>
         </div>
       </div>
@@ -108,7 +108,7 @@ export const LogsPage: React.FC = () => {
         </div>
 
         {/* Level pills */}
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex items-center overflow-x-auto no-scrollbar gap-1.5 pt-0.5 pb-0.5 touch-pan-x">
           {[
             { id: 'all', label: '全部' },
             { id: 'info', label: 'INFO' },
@@ -119,7 +119,7 @@ export const LogsPage: React.FC = () => {
             <button
               key={lvl.id}
               onClick={() => setLevelFilter(lvl.id)}
-              className={`px-3 py-1 rounded-full text-[11px] font-semibold transition ${
+              className={`whitespace-nowrap px-3 py-1 rounded-full text-[11px] font-semibold transition ${
                 levelFilter === lvl.id
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -143,14 +143,14 @@ export const LogsPage: React.FC = () => {
                 <div key={log.id} className="p-3 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition">
                   <div
                     onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
-                    className="flex items-start justify-between cursor-pointer space-x-3"
+                    className="flex items-start justify-between cursor-pointer space-x-2"
                   >
-                    <div className="flex items-start space-x-2.5 min-w-0">
-                      <span className="text-slate-400 whitespace-nowrap">
+                    <div className="flex flex-wrap sm:flex-nowrap items-baseline gap-1.5 sm:gap-2.5 min-w-0 flex-1">
+                      <span className="text-slate-400 whitespace-nowrap text-[10px]">
                         {new Date(log.timestamp).toLocaleTimeString()}
                       </span>
                       <span
-                        className={`px-1.5 py-0.2 rounded text-[10px] font-bold uppercase tracking-wider ${
+                        className={`px-1.5 py-0.2 rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${
                           log.level === 'error'
                             ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
                             : log.level === 'warn'
@@ -162,14 +162,14 @@ export const LogsPage: React.FC = () => {
                       >
                         {log.level}
                       </span>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                      <span className="font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap text-[10px]">
                         [{log.module}]
                       </span>
-                      <span className="text-slate-900 dark:text-slate-100 break-all">{log.message}</span>
+                      <span className="text-slate-900 dark:text-slate-100 break-words flex-1 min-w-[200px]">{log.message}</span>
                     </div>
 
                     {log.details && (
-                      <span className="text-slate-400 hover:text-slate-600 flex-shrink-0">
+                      <span className="text-slate-400 hover:text-slate-600 flex-shrink-0 pt-0.5">
                         {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                       </span>
                     )}

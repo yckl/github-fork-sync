@@ -283,7 +283,7 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
         </div>
 
         {/* Status filter pills */}
-        <div className="flex flex-wrap gap-1.5 pt-1">
+        <div className="flex items-center overflow-x-auto no-scrollbar gap-1.5 pt-1 pb-1 -mx-1 px-1 touch-pan-x">
           {[
             { id: 'all', label: '全部状态' },
             { id: 'behind_safe', label: '待同步 (安全落后)' },
@@ -296,7 +296,7 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
             <button
               key={f.id}
               onClick={() => setStatusFilter(f.id)}
-              className={`px-3 py-1 rounded-full text-[11px] font-medium transition ${
+              className={`whitespace-nowrap px-3 py-1 rounded-full text-[11px] font-medium transition ${
                 statusFilter === f.id
                   ? 'bg-emerald-600 text-white font-semibold shadow-sm'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -319,38 +319,38 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
 
       {/* Batch toolbar if items selected */}
       {selectedIds.size > 0 && (
-        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center space-x-2 font-semibold text-emerald-900 dark:text-emerald-200">
             <span>已选择 {selectedIds.size} 个仓库</span>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <button
               onClick={() => handleBatchMonitor(true)}
-              className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 text-slate-700 dark:text-slate-200 font-medium"
+              className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 text-slate-700 dark:text-slate-200 font-medium text-xs flex-1 sm:flex-initial text-center"
             >
               开启监控
             </button>
             <button
               onClick={() => handleBatchMonitor(false)}
-              className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 text-slate-700 dark:text-slate-200 font-medium"
+              className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 text-slate-700 dark:text-slate-200 font-medium text-xs flex-1 sm:flex-initial text-center"
             >
               暂停监控
             </button>
             <button
               onClick={() => handleBatchSyncMode('mode_a')}
-              className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 text-slate-700 dark:text-slate-200 font-medium"
+              className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 text-slate-700 dark:text-slate-200 font-medium text-xs flex-1 sm:flex-initial text-center"
             >
               设为模式 A
             </button>
             <button
               onClick={handleBatchSync}
-              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-sm"
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-sm text-xs flex-1 sm:flex-initial text-center"
             >
               批量发起同步
             </button>
             <button
               onClick={handleBatchDelete}
-              className="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/40 font-medium inline-flex items-center space-x-1"
+              className="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/40 font-medium inline-flex items-center justify-center space-x-1 text-xs flex-1 sm:flex-initial"
             >
               <Trash2 className="w-3.5 h-3.5 mr-1" />
               <span>批量移除 ({selectedIds.size})</span>
@@ -359,8 +359,262 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
         </div>
       )}
 
-      {/* Main Repositories Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+      {/* Mobile Card List View (< md screens) */}
+      <div className="block md:hidden space-y-3">
+        {/* Mobile quick select bar */}
+        <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-xs">
+          <button
+            onClick={toggleSelectAll}
+            className="flex items-center space-x-2 text-slate-600 dark:text-slate-300 font-medium"
+          >
+            {selectedIds.size === displayedRepos.length && displayedRepos.length > 0 ? (
+              <CheckSquare className="w-4 h-4 text-emerald-600" />
+            ) : (
+              <Square className="w-4 h-4 text-slate-400" />
+            )}
+            <span>全选当前 ({displayedRepos.length})</span>
+          </button>
+          <span className="text-[11px] text-slate-400">已选 {selectedIds.size} 项</span>
+        </div>
+
+        {displayedRepos.length === 0 ? (
+          <div className="p-8 text-center text-slate-400 text-xs bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
+            {repoTypeFilter === 'forks'
+              ? '未找到 Fork 仓库。'
+              : repoTypeFilter === 'self'
+              ? '未找到自建项目。'
+              : '未找到匹配的仓库。'}
+          </div>
+        ) : (
+          displayedRepos.map((repo) => {
+            const comp = repo.latestComparison;
+            const isSelected = selectedIds.has(repo.id);
+            const isSelfOwned = !repo.isFork && !repo.syncConfig?.upstreamRepo;
+
+            return (
+              <div
+                key={repo.id}
+                className={`p-4 rounded-3xl bg-white dark:bg-slate-900 border transition shadow-sm space-y-3 ${
+                  isSelected
+                    ? 'border-emerald-500/80 bg-emerald-50/20 dark:bg-emerald-950/20 ring-1 ring-emerald-500/30'
+                    : 'border-slate-200/80 dark:border-slate-800'
+                }`}
+              >
+                {/* Header row: Checkbox, Name, Badges */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start space-x-2.5 min-w-0">
+                    <button
+                      onClick={() => toggleSelectOne(repo.id)}
+                      className="mt-0.5 text-slate-400 hover:text-slate-600 flex-shrink-0"
+                    >
+                      {isSelected ? (
+                        <CheckSquare className="w-4 h-4 text-emerald-600" />
+                      ) : (
+                        <Square className="w-4 h-4" />
+                      )}
+                    </button>
+                    <div className="min-w-0">
+                      <div className="flex items-center space-x-1.5 flex-wrap">
+                        <span className="font-bold text-slate-900 dark:text-white text-sm truncate">
+                          {repo.name}
+                        </span>
+                        {repo.htmlUrl && (
+                          <a
+                            href={repo.htmlUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-slate-400 hover:text-emerald-500 p-0.5"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                        {repo.isPrivate && (
+                          <span className="px-1.5 py-0.2 text-[9px] rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-semibold">
+                            私有
+                          </span>
+                        )}
+                        {repo.isArchived && (
+                          <span className="px-1.5 py-0.2 text-[9px] rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-semibold">
+                            已归档
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                        {isSelfOwned ? (
+                          <span className="inline-flex items-center space-x-1 text-indigo-600 dark:text-indigo-400 font-medium">
+                            <FolderGit2 className="w-3 h-3 flex-shrink-0" />
+                            <span>原生自建项目 (无上游)</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center space-x-1">
+                            <GitFork className="w-3 h-3 flex-shrink-0 text-slate-400" />
+                            <span className="truncate">{repo.parentFullName || repo.syncConfig?.upstreamRepo}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sync status badge */}
+                  <div className="flex-shrink-0">
+                    {isSelfOwned ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        自建项目
+                      </span>
+                    ) : comp ? (
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          comp.status === 'up_to_date'
+                            ? 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300'
+                            : comp.status === 'behind_safe'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 animate-pulse'
+                            : comp.status === 'diverged'
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                            : comp.status === 'ahead'
+                            ? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200'
+                            : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                        }`}
+                      >
+                        {comp.status === 'up_to_date' && '已是最新'}
+                        {comp.status === 'behind_safe' && '待同步'}
+                        {comp.status === 'diverged' && '分支分叉'}
+                        {comp.status === 'ahead' && '我方领先'}
+                        {comp.status === 'incompatible' && '不兼容'}
+                        {comp.status === 'error' && '检测失败'}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 text-[10px]">未检测</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Middle details: Branch & Commit comparison */}
+                <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between text-xs">
+                  <div className="font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                    {isSelfOwned ? (
+                      <span>分支: {repo.defaultBranch}</span>
+                    ) : (
+                      <div className="space-y-0.5">
+                        <div>目标: <span className="font-semibold text-slate-900 dark:text-white">{repo.syncConfig?.targetBranch || 'upstream-sync'}</span></div>
+                        <div className="text-slate-400 text-[10px]">上游: {repo.syncConfig?.upstreamBranch || 'main'}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="font-mono tabular-nums text-right">
+                    {isSelfOwned ? (
+                      <span className="text-slate-400 text-[10px]">无需同步</span>
+                    ) : comp ? (
+                      <div className="flex flex-col items-end gap-0.5">
+                        {comp.aheadBy > 0 ? (
+                          <span className="px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-bold text-[10px]">
+                            +{comp.aheadBy} 上游新提交
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-[10px]">0 新提交</span>
+                        )}
+                        {comp.behindBy > 0 && (
+                          <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-medium text-[10px]">
+                            -{comp.behindBy} 独有
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 text-[10px]">未检测</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Auto switch row */}
+                {!isSelfOwned && (
+                  <div className="flex items-center justify-between text-xs px-1 pt-0.5">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-slate-500 text-[11px]">自动检测</span>
+                      <button
+                        onClick={() => handleToggleAutoCheck(repo)}
+                        className={`w-8 h-4 rounded-full p-0.5 transition ${
+                          repo.syncConfig?.autoCheckEnabled ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'
+                        }`}
+                      >
+                        <div
+                          className={`w-3 h-3 rounded-full bg-white transition transform ${
+                            repo.syncConfig?.autoCheckEnabled ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <span className="text-slate-500 text-[11px]">自动同步</span>
+                      <button
+                        onClick={() => handleToggleAutoSync(repo)}
+                        className={`w-8 h-4 rounded-full p-0.5 transition ${
+                          repo.syncConfig?.autoSyncEnabled ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'
+                        }`}
+                      >
+                        <div
+                          className={`w-3 h-3 rounded-full bg-white transition transform ${
+                            repo.syncConfig?.autoSyncEnabled ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Card Action Buttons */}
+                <div className="pt-1 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-1.5">
+                  <div className="flex items-center space-x-1.5 flex-1">
+                    {!isSelfOwned && (
+                      <button
+                        onClick={() => handleSingleCheck(repo.id)}
+                        className="flex-1 py-1.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium flex items-center justify-center space-x-1 transition"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>检测</span>
+                      </button>
+                    )}
+
+                    {!isSelfOwned && (
+                      <button
+                        onClick={() => handleSingleSync(repo.id)}
+                        disabled={comp?.status !== 'behind_safe'}
+                        className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1 transition ${
+                          comp?.status === 'behind_safe'
+                            ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-500'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
+                        }`}
+                      >
+                        <Zap className="w-3 h-3" />
+                        <span>同步</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => setSelectedRepoId(repo.id)}
+                      className="py-1.5 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium flex items-center space-x-1 transition"
+                    >
+                      <Settings className="w-3 h-3" />
+                      <span>配置</span>
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => handleDeleteRepo(repo)}
+                    className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                    title="从列表中移除"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Main Repositories Table (Desktop >= md screens) */}
+      <div className="hidden md:block bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>

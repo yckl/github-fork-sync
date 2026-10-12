@@ -85,25 +85,27 @@ export const TasksPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center space-x-2.5">
-          <button
-            onClick={fetchJobs}
-            className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
-            title="手动刷新"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={handleClearJobs}
-            className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-500 hover:text-rose-600 dark:text-slate-400 transition"
-            title="清空历史任务"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+        <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-start">
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={fetchJobs}
+              className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
+              title="手动刷新"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleClearJobs}
+              className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-500 hover:text-rose-600 dark:text-slate-400 transition"
+              title="清空历史任务"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
           <button
             onClick={handleCheckAll}
             disabled={triggeringCheckAll}
-            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-md shadow-emerald-500/20 disabled:opacity-50 transition"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-md shadow-emerald-500/20 disabled:opacity-50 transition"
           >
             {triggeringCheckAll ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
             <span>全量扫描检测</span>
@@ -121,7 +123,7 @@ export const TasksPage: React.FC = () => {
       )}
 
       {/* Telemetry Status Cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">排队等待</span>
@@ -205,7 +207,77 @@ export const TasksPage: React.FC = () => {
           <span className="text-[11px] text-slate-400">每 3 秒自动刷新</span>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Task History Cards (< md screens) */}
+        <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800/60">
+          {jobs.length === 0 ? (
+            <div className="py-8 text-center text-slate-400 text-xs">队列为空，暂无运行任务</div>
+          ) : (
+            jobs.map((job) => {
+              const isSelfOwned = job.error?.includes('尚未配置同步信息') || job.currentStep?.includes('自建');
+              return (
+                <div key={job.id} className="p-3.5 space-y-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {job.type.startsWith('sync') ? 'Git 仓库同步' : '版本提交检测'}
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400">
+                      {job.finishedAt
+                        ? new Date(job.finishedAt).toLocaleTimeString()
+                        : new Date(job.createdAt).toLocaleTimeString()}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300 truncate">
+                      {job.repoFullName || (job.repoId ? `Repo #${job.repoId}` : '全局扫描')}
+                    </span>
+                    {isSelfOwned ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        自建跳过
+                      </span>
+                    ) : (
+                      <span
+                        className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          job.status === 'completed'
+                            ? 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300'
+                            : job.status === 'running'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 animate-pulse'
+                            : job.status === 'pending'
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                            : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                        }`}
+                      >
+                        {job.status === 'completed' && <CheckCircle2 className="w-3 h-3 mr-0.5" />}
+                        {job.status === 'failed' && <XCircle className="w-3 h-3 mr-0.5" />}
+                        {job.status === 'running' && <RefreshCw className="w-3 h-3 mr-0.5 animate-spin" />}
+                        {job.status === 'pending' && <Clock className="w-3 h-3 mr-0.5" />}
+                        <span>
+                          {job.status === 'completed' && '已完成'}
+                          {job.status === 'running' && '执行中'}
+                          {job.status === 'pending' && '等待中'}
+                          {job.status === 'failed' && '失败'}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {isSelfOwned ? (
+                      <span>原生自建项目，无需同步上游</span>
+                    ) : job.error ? (
+                      <span className="text-rose-600 dark:text-rose-400 font-medium">{job.error}</span>
+                    ) : (
+                      job.currentStep || '正常就绪'
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop Task History Table (>= md screens) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-800/50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
