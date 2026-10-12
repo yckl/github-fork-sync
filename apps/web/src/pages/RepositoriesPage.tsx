@@ -20,6 +20,7 @@ import {
 import type { RepositoryItem, SyncMode } from '@gitforksync/shared';
 import { api } from '../api/client.js';
 import { RepoDetailPage } from './RepoDetailPage.js';
+import { TaskProgressBanner } from '../components/TaskProgressBanner.js';
 
 interface RepositoriesPageProps {
   onRefreshStats: () => void;
@@ -208,6 +209,9 @@ export const RepositoriesPage: React.FC<RepositoriesPageProps> = ({ onRefreshSta
 
   return (
     <div className="space-y-5">
+      {/* Real-time batch task progress bar banner */}
+      <TaskProgressBanner onRefresh={() => { fetchRepos(); onRefreshStats(); }} />
+
       {/* Search & Filter Toolbar */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3">
         <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">

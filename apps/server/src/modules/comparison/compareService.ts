@@ -125,7 +125,14 @@ export async function compareRepositoryBranches(repoId: number): Promise<Compare
     throw new Error(`仓库 ${repo.fullName} 尚未配置上游同步信息`);
   }
 
-  const { upstreamRepo, upstreamBranch, targetBranch, syncMode } = repo.syncConfig;
+  let { upstreamRepo, upstreamBranch, targetBranch, syncMode } = repo.syncConfig;
+  // In Mode B (auto sync main branch), target branch must always be the repository's default branch
+  if (syncMode === 'mode_b') {
+    targetBranch = repo.defaultBranch;
+  } else if (!targetBranch || targetBranch === 'upstream-sync' || targetBranch === 'upstream-sync-custom') {
+    // If not specified or legacy placeholder, fallback to default branch
+    targetBranch = repo.defaultBranch;
+  }
   const octokit = await getAuthenticatedOctokit();
   if (!octokit) {
     throw new Error('未连接 GitHub 账号');
@@ -264,6 +271,24 @@ export async function compareRepositoryBranches(repoId: number): Promise<Compare
     await recordComparisonSuccess(repoId, startedAt, result);
     return result;
   } catch (err: any) {
+    // If GitHub returns 404 because there is no common ancestor across branches
+    const isNoCommonAncestor =
+      err.status === 404 ||
+      (typeof err.message === 'string' && err.message.toLowerCase().includes('no common ancestor'));
+    if (isNoCommonAncestor) {
+      const result: CompareResult = {
+        status: 'incompatible',
+        upstreamSha,
+        targetSha,
+        aheadBy: 0,
+        behindBy: 0,
+        commonAncestorSha: null,
+        summary: '两个分支不存在共同祖先，历史不兼容，无法直接快进同步',
+      };
+      await recordComparisonSuccess(repoId, startedAt, result);
+      return result;
+    }
+
     const msg = `GitHub 比较提交历史失败: ${err.message}`;
     logger.error('Compare', msg);
     return recordComparisonFailure(repoId, startedAt, msg);

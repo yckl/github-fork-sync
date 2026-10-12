@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { DashboardStats, RepositoryItem } from '@gitforksync/shared';
 import { api } from '../api/client.js';
+import { TaskProgressBanner } from '../components/TaskProgressBanner.js';
 
 interface DashboardPageProps {
   stats: DashboardStats | null;
@@ -198,6 +199,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Real-time batch task progress bar banner */}
+      <TaskProgressBanner onRefresh={onRefresh} />
 
       {message && (
         <div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 flex items-center justify-between">

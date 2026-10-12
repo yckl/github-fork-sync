@@ -168,6 +168,11 @@ export const api = {
       body: JSON.stringify(data),
     });
   },
+  applyDefaultsToAll: async (): Promise<{ count: number; message: string }> => {
+    return fetchJson<{ count: number; message: string }>('/settings/apply-to-all', {
+      method: 'POST',
+    });
+  },
 
   // Logs
   getLogs: async (params?: { level?: string; repoId?: number; search?: string; limit?: number }): Promise<{

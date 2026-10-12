@@ -188,15 +188,16 @@ export async function upsertRepositories(repos: Array<{
 
     // If it's a fork and doesn't have sync config yet, create default
     if (r.isFork && r.parentFullName) {
+      const targetBranch = settings.defaultSyncMode === 'mode_b' ? (r.defaultBranch || 'main') : settings.defaultTargetBranch;
       await db.execute({
         sql: `INSERT OR IGNORE INTO sync_configs (
           repo_id, upstream_repo, upstream_branch, target_branch, sync_mode, auto_check_enabled, auto_sync_enabled, check_interval_minutes, updated_at
-        ) VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?);`,
+        ) VALUES (?, ?, ?, ?, ?, 1, 0, ?, ?);`,
         args: [
           r.id,
           r.parentFullName,
           r.parentDefaultBranch || 'main',
-          settings.defaultTargetBranch,
+          targetBranch,
           settings.defaultSyncMode,
           settings.defaultCheckIntervalMinutes,
           now,
@@ -695,6 +696,23 @@ export async function updateSettings(settings: Partial<SystemSettings>): Promise
       });
     }
   }
+}
+
+export async function applyDefaultSyncSettingsToAllForks(): Promise<number> {
+  const db = getDb();
+  const settings = await getSettings();
+  const repos = await listRepositories({ isFork: true });
+  let count = 0;
+  const now = new Date().toISOString();
+  for (const r of repos) {
+    const targetBranch = settings.defaultSyncMode === 'mode_b' ? (r.defaultBranch || 'main') : settings.defaultTargetBranch;
+    await db.execute({
+      sql: `UPDATE sync_configs SET sync_mode = ?, target_branch = ?, updated_at = ? WHERE repo_id = ?;`,
+      args: [settings.defaultSyncMode, targetBranch, now, r.id],
+    });
+    count++;
+  }
+  return count;
 }
 
 // ==================== Logs DAO ====================

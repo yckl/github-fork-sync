@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { RepositoryItem, SyncConfig, CheckRunRecord, SyncRunRecord, SyncMode } from '@gitforksync/shared';
 import { api } from '../api/client.js';
+import { SyncModeSelector } from '../components/SyncModeSelector.js';
 
 interface RepoDetailPageProps {
   repoId: number | null;
@@ -289,19 +290,14 @@ export const RepoDetailPage: React.FC<RepoDetailPageProps> = ({ repoId, onClose,
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                   同步策略模式
                 </label>
-                <select
+                <SyncModeSelector
                   value={syncMode}
-                  onChange={(e) => setSyncMode(e.target.value as any)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                >
-                  <option value="mode_a">模式 A：自动同步到独立分支 (默认安全保留快照)</option>
-                  <option value="mode_b">模式 B：自动同步主分支 (仅限纯快进)</option>
-                  <option value="mode_c">模式 C：仅检测，不自动同步</option>
-                </select>
+                  onChange={(val) => setSyncMode(val)}
+                />
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-3">

@@ -89,4 +89,11 @@ export async function settingRoutes(server: FastifyInstance) {
 
     return { success: true, message: `配置已导入，已更新 ${appliedCount} 个仓库配置` };
   });
+
+  // Apply default sync settings to all existing fork repositories
+  server.post('/api/settings/apply-to-all', async () => {
+    const { applyDefaultSyncSettingsToAllForks } = await import('../modules/storage/db.js');
+    const count = await applyDefaultSyncSettingsToAllForks();
+    return { success: true, count, message: `已将当前默认同步策略成功应用到全部 ${count} 个 Fork 仓库` };
+  });
 }

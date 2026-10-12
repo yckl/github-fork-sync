@@ -42,7 +42,10 @@ export async function executeRepositorySync(
     throw new Error(`仓库 ${repo.fullName} 当前已有同步或检测任务正在运行，请稍候再试`);
   }
 
-  const { upstreamRepo, upstreamBranch, targetBranch, syncMode } = repo.syncConfig;
+  let { upstreamRepo, upstreamBranch, targetBranch, syncMode } = repo.syncConfig;
+  if (syncMode === 'mode_b' || !targetBranch || targetBranch === 'upstream-sync' || targetBranch === 'upstream-sync-custom') {
+    targetBranch = repo.defaultBranch;
+  }
   const startedAt = new Date().toISOString();
   let tempDir = path.join(config.tempGitDir, taskId);
 
