@@ -255,13 +255,13 @@ export async function executeRepositorySync(
 
     // 10. Re-verify target branch SHA via GitHub API (Strict validation)
     options?.onProgress?.('通过 GitHub API 验证推送结果...');
-    const octokit = await getAuthenticatedOctokit();
+    const verifyOctokit = octokit || (await getAuthenticatedOctokit());
     let afterSha: string | null = null;
     let verificationSuccess = false;
 
-    if (octokit) {
+    if (verifyOctokit) {
       try {
-        const branchCheck = await octokit.rest.repos.getBranch({
+        const branchCheck = await verifyOctokit.rest.repos.getBranch({
           owner: repo.owner,
           repo: repo.name,
           branch: targetBranch,
