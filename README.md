@@ -62,6 +62,11 @@
   - 横向触摸滑动的状态过滤标签栏。
   - 92vh 底部滑出抽屉与顶部拖拽手势小把手（Drag Handle）。
 
+### 5. ⚡ 双轨同步与 Windows 网络自适应
+- **GitHub 官方云端直连快轨 (Cloud Direct Sync)**：优先调用 GitHub 官方 `merge-upstream` 云端接口，0.5 秒内极速合并，不消耗本地磁盘与带宽，彻底免疫本地网络干扰。
+- **Windows 本地代理自适应穿透**：底层自动识别 Windows 注册表系统代理（如 Clash / Mihomo / V2Ray 等 `127.0.0.1:7897`），为所有 Git 网络操作注入代理加速，彻底消除 21 秒连接超时与网络重置。
+- **超大项目自适应深度与容灾**：根据提交差自适应计算拉取深度，并剔除无用 Tag，配合 10 分钟超长超时与 Windows `EBUSY` 文件占用重试机制，轻松同步 GB 级大型开源仓库（如 Ghidra）。
+
 ---
 
 ## 🎛️ 三种核心同步策略
@@ -157,12 +162,17 @@ npm start
 
 ### 步骤 1：连接 GitHub 账号
 1. 打开网页控制台，进入首次欢迎配置页面。
-2. 前往 GitHub Settings -> Developer settings -> Personal access tokens 生成令牌：
-   - 推荐创建 **Fine-grained PAT**（细粒度令牌）。
-   - 权限设置：
-     - **Repository permissions** -> **Contents**: `Read and write`（用于快进推送代码）。
-     - **Repository permissions** -> **Metadata**: `Read-only`（默认必备基础权限）。
-3. 粘贴 Token 点击“验证并连接”，系统将即时核验权限并展示你的 GitHub 头像与账号信息。
+2. 前往 GitHub Settings -> Developer settings -> Personal access tokens 生成访问令牌：
+   - **方案 A：Tokens (classic)（强烈推荐，兼容性与性能最佳）**：
+     - 点击 **Generate new token (classic)**。
+     - 勾选 **`repo`**（完整私有与公开仓库读写权限）。
+     - 勾选 **`workflow`**（允许同步包含 GitHub Actions 自动化工作流更新的提交）。
+     - *优势：完全支持 GitHub 官方云端直连合并 API，超大仓库秒级完成同步，无需通过本地网络下载。*
+   - **方案 B：Fine-grained PAT（细粒度令牌）**：
+     - **Repository access**：务必选择 **All repositories**（所有仓库）。
+     - **Repository permissions** -> **Contents**：设置为 `Read and write`。
+     - **Repository permissions** -> **Workflows**：设置为 `Read and write`。
+3. 粘贴生成的 Token 点击“验证并连接”，系统将即时核验权限并展示你的 GitHub 头像与账号信息。
 
 ### 步骤 2：扫描与发现 Fork 仓库
 - 点击右上角或向导中的 **“扫描新仓库”**。
