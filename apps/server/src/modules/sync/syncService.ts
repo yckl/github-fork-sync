@@ -20,6 +20,22 @@ export interface SyncExecutionResult {
   message: string;
 }
 
+async function safelyCleanupDir(dirPath: string, retries = 5, delayMs = 600): Promise<void> {
+  if (!fs.existsSync(dirPath)) return;
+  for (let i = 0; i < retries; i++) {
+    try {
+      fs.rmSync(dirPath, { recursive: true, force: true });
+      return;
+    } catch (e: any) {
+      if (i === retries - 1) {
+        logger.warn('Sync', `清理临时目录最终失败 (${dirPath}): ${e.message}`);
+      } else {
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+    }
+  }
+}
+
 export async function executeRepositorySync(
   repoId: number,
   options?: {
@@ -161,9 +177,7 @@ export async function executeRepositorySync(
 
     // 4. Create isolated temporary workspace
     options?.onProgress?.('创建临时 Git 工作目录...');
-    if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true });
-    }
+    await safelyCleanupDir(tempDir);
     fs.mkdirSync(tempDir, { recursive: true });
 
     // 5. Initialize Git repository
@@ -181,12 +195,19 @@ export async function executeRepositorySync(
     await runGitCommand(['remote', 'add', 'origin', originUrl], { cwd: tempDir, token });
 
     // 7. Fetch upstream target branch
-    options?.onProgress?.(`拉取上游 ${upstreamRepo}:${upstreamBranch} 提交...`);
-    const fetchRes = await runGitCommand(['fetch', 'upstream', upstreamBranch, '--depth=100'], {
-      cwd: tempDir,
-      token,
-      timeoutMs: 120000,
-    });
+    // Adaptive depth: fetch necessary commits + small margin, avoid pulling unnecessary history for giant repos
+    const neededDepth = (comp.aheadBy && comp.aheadBy > 0) ? comp.aheadBy + 5 : 20;
+    const fetchDepth = Math.min(Math.max(neededDepth, 10), 100);
+
+    options?.onProgress?.(`拉取上游 ${upstreamRepo}:${upstreamBranch} 提交 (深度: ${fetchDepth})...`);
+    const fetchRes = await runGitCommand(
+      ['fetch', 'upstream', upstreamBranch, `--depth=${fetchDepth}`, '--no-tags'],
+      {
+        cwd: tempDir,
+        token,
+        timeoutMs: 600000, // 10 minutes timeout for large repos
+      }
+    );
 
     if (fetchRes.exitCode !== 0) {
       throw new Error(`从上游拉取提交失败: ${fetchRes.stderr || 'Git 网络错误'}`);
@@ -207,7 +228,7 @@ export async function executeRepositorySync(
     // Non-forced push using normal refspec: FETCH_HEAD:refs/heads/<targetBranch>
     const pushRes = await runGitCommand(
       ['push', 'origin', `FETCH_HEAD:refs/heads/${targetBranch}`],
-      { cwd: tempDir, token, timeoutMs: 120000 }
+      { cwd: tempDir, token, timeoutMs: 600000 }
     );
 
     if (pushRes.exitCode !== 0) {
@@ -307,13 +328,7 @@ export async function executeRepositorySync(
     throw err;
   } finally {
     // 11. Cleanup temporary directory
-    try {
-      if (fs.existsSync(tempDir)) {
-        fs.rmSync(tempDir, { recursive: true, force: true });
-      }
-    } catch (e: any) {
-      logger.warn('Sync', `清理临时目录失败: ${e.message}`);
-    }
+    await safelyCleanupDir(tempDir);
 
     // 12. Release repo lock
     repoLock.release(repoId, taskId);
