@@ -80,6 +80,78 @@ export async function executeRepositorySync(
     const expectedSha = comp.upstreamSha;
     const beforeSha = comp.targetSha;
 
+    // Fast-path: If repo is an official GitHub fork and syncing default branch,
+    // attempt GitHub's Cloud Direct Sync (merge-upstream) first.
+    // This executes directly on GitHub's cloud in <500ms without consuming local bandwidth.
+    const octokit = await getAuthenticatedOctokit();
+    if (octokit && repo.isFork && targetBranch === repo.defaultBranch) {
+      try {
+        options?.onProgress?.('尝试通过 GitHub 官方云端接口直接同步...');
+        const mergeRes = await octokit.rest.repos.mergeUpstream({
+          owner: repo.owner,
+          repo: repo.name,
+          branch: targetBranch,
+        });
+
+        if (mergeRes.status === 200) {
+          const branchCheck = await octokit.rest.repos.getBranch({
+            owner: repo.owner,
+            repo: repo.name,
+            branch: targetBranch,
+          });
+          const afterSha = branchCheck.data.commit.sha;
+          const finishedAt = new Date().toISOString();
+
+          const syncRecord: SyncRunRecord = {
+            id: taskId,
+            repoId,
+            syncMode,
+            targetBranch,
+            startedAt,
+            finishedAt,
+            beforeSha,
+            targetSha: expectedSha,
+            afterSha,
+            status: 'success',
+            gitError: null,
+            verificationResult: true,
+          };
+          await createSyncRun(syncRecord);
+          await updateLatestComparison(repoId, {
+            status: 'up_to_date',
+            upstreamSha: expectedSha,
+            targetSha: afterSha,
+            aheadBy: 0,
+            behindBy: 0,
+            commonAncestorSha: afterSha,
+            checkedAt: finishedAt,
+            errorMessage: null,
+          });
+
+          options?.onProgress?.('云端直接同步完成！');
+          logger.info('Sync', `GitHub 云端直接同步成功: ${repo.fullName} 目标分支 ${targetBranch} -> ${afterSha}`, {
+            repoId,
+            jobId: taskId,
+          });
+
+          return {
+            runId: taskId,
+            status: 'success',
+            beforeSha,
+            targetSha: expectedSha,
+            afterSha,
+            message: '通过 GitHub 云端直接同步成功！',
+          };
+        }
+      } catch (cloudErr: any) {
+        logger.info(
+          'Sync',
+          `GitHub 云端直接同步未命中或需本地处理 (${cloudErr.message})，转入本地 Git 引擎...`,
+          { repoId, jobId: taskId }
+        );
+      }
+    }
+
     // 3. Retrieve token for git authentication
     const { encryptedToken } = await getAccount();
     if (!encryptedToken) {
