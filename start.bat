@@ -33,6 +33,19 @@ if not exist "apps\web\dist\index.html" (
     call npm run build --workspace=@gitforksync/web
 )
 
+@REM Auto-detect Windows system proxy from Registry if not already set
+if "%HTTP_PROXY%"=="" (
+    for /f "tokens=2*" %%a in ('reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v ProxyEnable 2^>nul') do set "PROXY_ENABLED=%%b"
+    if "%PROXY_ENABLED%"=="0x1" (
+        for /f "tokens=2*" %%a in ('reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v ProxyServer 2^>nul') do (
+            set "HTTP_PROXY=http://%%b"
+            set "HTTPS_PROXY=http://%%b"
+            set "ALL_PROXY=http://%%b"
+            echo [INFO] Auto-detected Windows system proxy: http://%%b
+        )
+    )
+)
+
 node apps\server\dist\index.js
 
 if %errorlevel% neq 0 (

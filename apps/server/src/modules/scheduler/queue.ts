@@ -24,6 +24,17 @@ class TaskQueue {
     priority = 0,
     runner: (jobId: string, updateStep: (step: string) => Promise<void>) => Promise<void>
   ): Promise<string> {
+    // Deduplication: if an identical task for this repo is already pending in the queue, skip duplicate enqueue
+    if (repoId !== null) {
+      const existingPending = this.queue.find(
+        (item) => item.job.repoId === repoId && item.job.type === type && item.job.status === 'pending'
+      );
+      if (existingPending) {
+        logger.debug('TaskQueue', `[Deduplicate] 仓库 #${repoId} 的任务 [${type}] 已在队列中排队，自动跳过重复入队`);
+        return existingPending.job.id;
+      }
+    }
+
     const id = crypto.randomUUID();
     const job: JobRecord = {
       id,
